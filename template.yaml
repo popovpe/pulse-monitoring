@@ -1,0 +1,78 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Streams DynamoDB table changes to EventBridge (uksb-1tthgi812) (tag:dynamodb-eventbridge-java)
+Resources:
+  #DynamoDB Streams specification
+  PulseValuesStream:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      TableName: pulse-data
+      AttributeDefinitions:
+        - AttributeName: seqNumber
+          AttributeType: N
+      KeySchema:
+        - AttributeName: seqNumber
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      StreamSpecification:
+          StreamViewType: NEW_IMAGE
+
+  AbnormalPulseValues:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      TableName: pulse-abnormal-values 
+      AttributeDefinitions:
+        - AttributeName: seqNumber
+          AttributeType: N
+      KeySchema:
+        - AttributeName: seqNumber
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
+
+  PulseJumpAnalyzer:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      CodeUri: pulse-jump-analyzer
+      Handler: telran.pulse.monitoring.App::handleRequest
+      Runtime: java17
+      Architectures:
+        - x86_64
+      Timeout: 30
+      MemorySize: 512
+      Events:
+        TableRecordChange:
+          Type: DynamoDB
+          Properties:
+            StartingPosition: LATEST
+            Stream: !GetAtt PulseValuesStream.StreamArn
+            FilterCriteria:
+              Filters:
+                - Pattern: '{"eventName": ["INSERT"]}'
+
+  PulseValuesAnalyzer:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      CodeUri: pulse-values-analyzer
+      Handler: telran.pulse.monitoring.App::handleRequest
+      Runtime: java17
+      Architectures:
+        - x86_64
+      Timeout: 30
+      MemorySize: 512
+      Events:
+        TableRecordChange:
+          Type: DynamoDB
+          Properties:
+            StartingPosition: LATEST
+            Stream: !GetAtt PulseValuesStream.StreamArn
+            FilterCriteria:
+              Filters:
+                - Pattern: '{"eventName": ["INSERT"]}'
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AbnormalPulseValues
