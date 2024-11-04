@@ -27,9 +27,8 @@ public class App {
 	public static final int MIN_NORMAL_VALUE = 50;
 	public static final int MAX_NORMAL_VALUE = 190;
 
-	public static Logger logger;
+	public static Logger logger = configureLoggingFramework();
 
-	private static final Level LOGGING_LEVEL = parseLogLevelOrDefault("LOGGING_LEVEL", Level.FINER);
 
 	private static final DynamoDbEnhancedClient DYNAMODB_CLIENT = DynamoDbEnhancedClient.builder().build();
 	private static final DynamoDbTable<EnhancedDocument> DYNAMODB_TABLE = DYNAMODB_CLIENT.table(PULSE_DATA_TABLE_NAME,
@@ -40,7 +39,8 @@ public class App {
 					.build());
 
 	public void handleRequest(final DynamodbEvent event, final Context context) {
-		configureLoggingFramework();
+		
+		logger.finer("Hadler started");
 		logger.finer("Number records in event: " + event.getRecords().size());
 		event.getRecords().forEach(r -> {
 			var map = r.getDynamodb().getNewImage();
@@ -79,10 +79,10 @@ public class App {
 		return jsonObject;
 	}
 
-	private static void configureLoggingFramework() {
+	private static Logger configureLoggingFramework() {
 		logger = Logger.getLogger("logger");
 		logger.setUseParentHandlers(false);
-		logger.setLevel(LOGGING_LEVEL);
+		logger.setLevel(parseLogLevelOrDefault(System.getenv("LOGGING_LEVEL"), Level.INFO));
 		Handler handler = new ConsoleHandler();
 		handler.setFormatter(new Formatter() {
 
@@ -97,12 +97,12 @@ public class App {
 		});
 		handler.setLevel(Level.FINEST);
 		logger.addHandler(handler);
+		return logger;
 	}
 
 	private static Level parseLogLevelOrDefault(String varName, Level defaultLevel) {
 		Level logLevel = null;
 		try {
-			logLevel = Level.parse(System.getenv(varName));
 		} catch (RuntimeException e) {
 			logLevel = defaultLevel;
 		}

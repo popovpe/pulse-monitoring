@@ -35,13 +35,13 @@ Resources:
 
 
   PulseJumpAnalyzer:
-    Type: 'AWS::Serverless::Function'
-    Properties:
+   Type: 'AWS::Serverless::Function'
+   Properties:
       CodeUri: pulse-jump-analyzer
       Handler: telran.pulse.monitoring.App::handleRequest
       Runtime: java17
       Architectures:
-        - x86_64
+       - x86_64
       Timeout: 30
       MemorySize: 512
       Events:
