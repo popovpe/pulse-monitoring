@@ -14,18 +14,12 @@ import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 import software.amazon.awssdk.enhanced.dynamodb.document.EnhancedDocument;
 
 import java.util.Map;
+import static telran.pulse.monitoring.Constants.*;
 import java.util.logging.*;
 import software.amazon.awssdk.services.dynamodb.model.DynamoDbException;
 
 public class App {
 
-	private static final String PARTITION_KEY_ATTR_NAME = "seqNumber";
-	private static final String PULSE_DATA_TABLE_NAME = "pulse-abnormal-values";
-	private static final String PATIENTID_ATTR_NAME = "patientId";
-	private static final String TIMESTAMP_ATTR_NAME = "timestamp";
-	private static final String PULSE_VALUE_ATTR_NAME = "value";
-	public static final int MIN_NORMAL_VALUE = 50;
-	public static final int MAX_NORMAL_VALUE = 190;
 
 	public static Logger logger = configureLoggingFramework();
 

@@ -1,6 +1,19 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: Streams DynamoDB table changes to EventBridge (uksb-1tthgi812) (tag:dynamodb-eventbridge-java)
+Globals:
+  Function:
+    Runtime: java17
+    Timeout: 30
+    MemorySize: 512
+    Architectures:
+      - x86_64
+    Handler: telran.pulse.monitoring.App::handleRequest
+    Environment:
+      Variables:
+        LOGGING_LEVEL: INFO
+  
+
 Resources:
   #DynamoDB Streams specification
   PulseValuesStream:
@@ -38,12 +51,6 @@ Resources:
    Type: 'AWS::Serverless::Function'
    Properties:
       CodeUri: pulse-jump-analyzer
-      Handler: telran.pulse.monitoring.App::handleRequest
-      Runtime: java17
-      Architectures:
-       - x86_64
-      Timeout: 30
-      MemorySize: 512
       Events:
         TableRecordChange:
           Type: DynamoDB
@@ -58,12 +65,6 @@ Resources:
     Type: 'AWS::Serverless::Function'
     Properties:
       CodeUri: pulse-values-analyzer
-      Handler: telran.pulse.monitoring.App::handleRequest
-      Runtime: java17
-      Architectures:
-        - x86_64
-      Timeout: 30
-      MemorySize: 512
       Environment:
         Variables:
           LOGGING_LEVEL: FINER
