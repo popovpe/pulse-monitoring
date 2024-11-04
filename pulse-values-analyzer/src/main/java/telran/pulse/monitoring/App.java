@@ -101,6 +101,7 @@ public class App {
 	private static Level parseLogLevelOrDefault(String varName, Level defaultLevel) {
 		Level logLevel = null;
 		try {
+			logLevel = Level.parse(varName);
 		} catch (RuntimeException e) {
 			logLevel = defaultLevel;
 		}
