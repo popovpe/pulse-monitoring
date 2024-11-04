@@ -73,7 +73,6 @@ Resources:
           Properties:
             StartingPosition: LATEST
             Stream: !GetAtt PulseValuesStream.StreamArn
-            BatchSize: 1
             FilterCriteria:
               Filters:
                 - Pattern: '{"eventName": ["INSERT"]}'

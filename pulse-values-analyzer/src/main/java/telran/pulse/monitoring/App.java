@@ -40,8 +40,6 @@ public class App {
 
 	public void handleRequest(final DynamodbEvent event, final Context context) {
 		
-		logger.finer("Hadler started");
-		logger.finer("Number records in event: " + event.getRecords().size());
 		event.getRecords().forEach(r -> {
 			var map = r.getDynamodb().getNewImage();
 			int pulse = Integer.parseInt(map.get(PULSE_VALUE_ATTR_NAME).getN());
