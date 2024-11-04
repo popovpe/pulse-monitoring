@@ -64,12 +64,16 @@ Resources:
         - x86_64
       Timeout: 30
       MemorySize: 512
+      Environment:
+        Variables:
+          LOGGER_VALUE: FINER
       Events:
         TableRecordChange:
           Type: DynamoDB
           Properties:
             StartingPosition: LATEST
             Stream: !GetAtt PulseValuesStream.StreamArn
+            BatchSize: 1
             FilterCriteria:
               Filters:
                 - Pattern: '{"eventName": ["INSERT"]}'

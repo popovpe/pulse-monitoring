@@ -29,7 +29,7 @@ public class App {
 
 	public static Logger logger;
 
-	private static final Level LOGGING_LEVEL = parseLogLevelOrDefault("LOGGING_LEVEL", Level.INFO);
+	private static final Level LOGGING_LEVEL = parseLogLevelOrDefault("LOGGING_LEVEL", Level.FINER);
 
 	private static final DynamoDbEnhancedClient DYNAMODB_CLIENT = DynamoDbEnhancedClient.builder().build();
 	private static final DynamoDbTable<EnhancedDocument> DYNAMODB_TABLE = DYNAMODB_CLIENT.table(PULSE_DATA_TABLE_NAME,
@@ -41,12 +41,13 @@ public class App {
 
 	public void handleRequest(final DynamodbEvent event, final Context context) {
 		configureLoggingFramework();
+		logger.finer("Number records in event: " + event.getRecords().size());
 		event.getRecords().forEach(r -> {
-			final var map = r.getDynamodb().getNewImage();
-			final int pulse = Integer.parseInt(map.get(PULSE_VALUE_ATTR_NAME).getN());
+			var map = r.getDynamodb().getNewImage();
+			int pulse = Integer.parseInt(map.get(PULSE_VALUE_ATTR_NAME).getN());
 			if (map != null) {
 				logger.finer(() -> {
-					return String.format("Patient ID = %s, timestamp = %s, pulse = %d%n",
+					return String.format("Getting pulse. Patient ID = %s, timestamp = %s, pulse = %d%n",
 							map.get(PATIENTID_ATTR_NAME).getN(),
 							map.get(TIMESTAMP_ATTR_NAME).getN(), pulse);
 				});
@@ -59,10 +60,9 @@ public class App {
 	}
 
 	private void registerAbnormalPulse(Map<String, AttributeValue> map) {
-		logger.info(String.format("Patient ID = %s, pulse = %s%n", map.get(PATIENTID_ATTR_NAME).getN(),
+		logger.info(String.format("Abnormal pulse. Patient ID = %s, pulse = %s%n", map.get(PATIENTID_ATTR_NAME).getN(),
 				map.get(PULSE_VALUE_ATTR_NAME).getN()));
 		JSONObject jsonObject = getJSONFromMap(map);
-		logger.info("JSON for insert "  + jsonObject.toString());
 		try {
 			DYNAMODB_TABLE.putItem(EnhancedDocument.fromJson(jsonObject.toString()));
 		} catch (DynamoDbException e) {
