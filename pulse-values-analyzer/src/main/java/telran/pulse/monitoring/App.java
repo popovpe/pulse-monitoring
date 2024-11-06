@@ -15,13 +15,12 @@ import software.amazon.awssdk.enhanced.dynamodb.document.EnhancedDocument;
 
 import java.util.Map;
 import static telran.pulse.monitoring.Constants.*;
-import java.util.logging.*;
+import static telran.pulse.monitoring.AppLogging.logger;
 import software.amazon.awssdk.services.dynamodb.model.DynamoDbException;
 
 public class App {
 
 
-	public static Logger logger = configureLoggingFramework();
 
 
 	private static final DynamoDbEnhancedClient DYNAMODB_CLIENT = DynamoDbEnhancedClient.builder().build();
@@ -62,7 +61,7 @@ public class App {
 		}
 	}
 
-	private JSONObject getJSONFromMap(Map<String, AttributeValue> map) {
+	private static JSONObject getJSONFromMap(Map<String, AttributeValue> map) {
 		JSONObject jsonObject = new JSONObject();
 		jsonObject.put(PARTITION_KEY_ATTR_NAME, Long.parseLong(map.get(PARTITION_KEY_ATTR_NAME).getN()));
 		jsonObject.put(PATIENTID_ATTR_NAME, Long.parseLong(map.get(PATIENTID_ATTR_NAME).getN()));
@@ -70,36 +69,4 @@ public class App {
 		jsonObject.put(PULSE_VALUE_ATTR_NAME, Integer.parseInt(map.get(PULSE_VALUE_ATTR_NAME).getN()));
 		return jsonObject;
 	}
-
-	private static Logger configureLoggingFramework() {
-		logger = Logger.getLogger("logger");
-		logger.setUseParentHandlers(false);
-		logger.setLevel(parseLogLevelOrDefault(System.getenv("LOGGING_LEVEL"), Level.INFO));
-		Handler handler = new ConsoleHandler();
-		handler.setFormatter(new Formatter() {
-
-			@Override
-			public String format(LogRecord record) {
-				StringBuilder builder = new StringBuilder();
-				builder.append("[").append(record.getLevel()).append("] - ");
-				builder.append(record.getSourceMethodName()).append(" - ");
-				builder.append(formatMessage(record)).append("\n");
-				return builder.toString();
-			}
-		});
-		handler.setLevel(Level.FINEST);
-		logger.addHandler(handler);
-		return logger;
-	}
-
-	private static Level parseLogLevelOrDefault(String varName, Level defaultLevel) {
-		Level logLevel = null;
-		try {
-			logLevel = Level.parse(varName);
-		} catch (RuntimeException e) {
-			logLevel = defaultLevel;
-		}
-		return logLevel;
-	}
-
 }

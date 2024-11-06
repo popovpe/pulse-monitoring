@@ -11,11 +11,37 @@ Globals:
     Handler: telran.pulse.monitoring.App::handleRequest
     Environment:
       Variables:
-        LOGGING_LEVEL: INFO
+        LOGGING_LEVEL: FINER
   
 
 Resources:
   #DynamoDB Streams specification
+  PulseLastValue:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      TableName:  pulse-last-value
+      PrimaryKey:
+        Name: patientId
+        Type: Number
+
+  PulseJumpValues:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      TableName:  pulse-jump-values
+      AttributeDefinitions:
+        - AttributeName: patientId
+          AttributeType: N
+        - AttributeName: timestamp
+          AttributeType: N
+      KeySchema:
+        - AttributeName: patientId
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
   PulseValuesStream:
     Type: 'AWS::DynamoDB::Table'
     Properties:
@@ -51,6 +77,9 @@ Resources:
    Type: 'AWS::Serverless::Function'
    Properties:
       CodeUri: pulse-jump-analyzer
+      Environment:
+        Variables:
+          FACTOR: '0.1'
       Events:
         TableRecordChange:
           Type: DynamoDB
@@ -60,14 +89,16 @@ Resources:
             FilterCriteria:
               Filters:
                 - Pattern: '{"eventName": ["INSERT"]}'
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PulseJumpValues
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PulseLastValue
 
   PulseValuesAnalyzer:
     Type: 'AWS::Serverless::Function'
     Properties:
       CodeUri: pulse-values-analyzer
-      Environment:
-        Variables:
-          LOGGING_LEVEL: FINER
       Events:
         TableRecordChange:
           Type: DynamoDB
