@@ -1,17 +1,11 @@
-package telran.pulse.monitoring;
-
-import static telran.pulse.monitoring.Constants.DEFAULT_LOGGING_LEVEL;
-import static telran.pulse.monitoring.Constants.LOGGING_LEVEL_ENV_VAR;
+package telran.pulse.monitoring.common;
 
 import java.util.logging.*;
+import static telran.pulse.monitoring.common.Constants.*;
 
 public class AppLogging {
     
-    static Logger logger;
-	static {
-		logger = configureLoggingFramework();
-		logger.config(String.format("%s=%s", LOGGING_LEVEL_ENV_VAR, logger.getLevel().toString()));
-	}
+    public static Logger logger = configureLoggingFramework();
 
     private static Logger configureLoggingFramework() {
 		logger = Logger.getLogger("logger");

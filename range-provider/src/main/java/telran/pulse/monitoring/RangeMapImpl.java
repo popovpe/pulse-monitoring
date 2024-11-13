@@ -2,6 +2,8 @@ package telran.pulse.monitoring;
 
 import java.util.HashMap;
 
+import telran.pulse.monitoring.common.Range;
+
 public class RangeMapImpl implements RangeProvider {
 
       static HashMap<String, Range> ranges = new HashMap<>() {

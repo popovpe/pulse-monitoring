@@ -1,7 +1,7 @@
 package telran.pulse.monitoring;
 
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.*;
-import static telran.pulse.monitoring.Constants.*;
+import static telran.pulse.monitoring.common.Constants.*;
 import java.util.Map;
 
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeValue;

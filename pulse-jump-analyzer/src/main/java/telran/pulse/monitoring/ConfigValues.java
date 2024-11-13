@@ -1,5 +1,5 @@
 package telran.pulse.monitoring;
-import static telran.pulse.monitoring.AppLogging.logger;
+import static telran.pulse.monitoring.common.AppLogging.logger;
 import static telran.pulse.monitoring.Constants.*;
 
 

@@ -1,7 +1,5 @@
 package telran.pulse.monitoring;
 
-import static telran.pulse.monitoring.AppLogging.logger;
-
 import java.util.HashMap;
 import java.util.Map;
 import org.json.*;
@@ -10,8 +8,12 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
-import static telran.pulse.monitoring.Constants.*;
+
+import telran.pulse.monitoring.common.Range;
+
 import static telran.pulse.monitoring.RangeMapImpl.rangeProvider;
+import static telran.pulse.monitoring.common.AppLogging.logger;
+import static telran.pulse.monitoring.common.Constants.*;
 
 
 public class App implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
@@ -25,9 +27,9 @@ public class App implements RequestHandler<APIGatewayProxyRequestEvent, APIGatew
                 .withHeaders(headers);
 
         try {
-            String patientIdStr = mapParameters.get(PATIENT_ID_ATTR);
+            String patientIdStr = mapParameters.get(PATIENTID_ATTR_NAME );
             if (patientIdStr == null) {
-                telran.pulse.monitoring.AppLogging.logger.warning(String.format("Request doesn't contain %s value", PATIENT_ID_ATTR));
+                logger.warning(String.format("Request doesn't contain %s value", PATIENTID_ATTR_NAME ));
                 throw new IllegalArgumentException("no patientId parameter");
             }
             logger.finer(()->String.format("Processing request for patientId=%s", patientIdStr));

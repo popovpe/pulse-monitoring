@@ -89,6 +89,18 @@ Resources:
       ProvisionedThroughput:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
+      StreamSpecification:
+          StreamViewType: NEW_IMAGE
+
+
+ #SNS Topic for abnormal pulse values notification
+  AbnormalValuesSNS:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: AbnormalValuesSNS
+      Subscription:
+        - Protocol: email
+          Endpoint: popov.pe@gmail.com
 
 
   PulseJumpAnalyzer:
@@ -132,3 +144,25 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref AbnormalPulseValues
+        - CloudWatchPutMetricPolicy: {}
+  # Lambda for abnormal pulse values notification
+  AbnormalValuesNotifier:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: abnormal-values-notifier
+      Policies:
+        - SNSPublishMessagePolicy:
+            TopicName: !GetAtt AbnormalValuesSNS.TopicName
+      Environment:
+        Variables:
+          TOPIC_ARN: !Ref AbnormalValuesSNS
+      Events:
+        TableRecordChange:
+          Type: DynamoDB
+          Properties:
+            StartingPosition: LATEST
+            Stream: !GetAtt AbnormalPulseValues.StreamArn
+            FilterCriteria:
+              Filters:
+                - Pattern: '{"eventName": ["INSERT"]}'
+

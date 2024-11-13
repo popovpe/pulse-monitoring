@@ -1,4 +1,4 @@
-package telran.pulse.monitoring;
+package telran.pulse.monitoring.common;
 import org.json.*;
 
 public record Range(int min, int max) {

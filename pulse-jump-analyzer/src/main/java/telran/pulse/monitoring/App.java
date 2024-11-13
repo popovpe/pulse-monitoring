@@ -15,9 +15,13 @@ import software.amazon.awssdk.enhanced.dynamodb.TableMetadata;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 import software.amazon.awssdk.enhanced.dynamodb.document.EnhancedDocument;
 import software.amazon.awssdk.services.dynamodb.model.DynamoDbException;
-import static telran.pulse.monitoring.AppLogging.logger;
+import static telran.pulse.monitoring.common.AppLogging.logger;
 
 import static telran.pulse.monitoring.Constants.*;
+import static telran.pulse.monitoring.common.Constants.*;
+import static telran.pulse.monitoring.common.Util.processInsertedItemsFromDDBEvent;
+
+
 
 public class App {
 
@@ -30,39 +34,31 @@ public class App {
 
 	private static final DynamoDbTable<EnhancedDocument> JUMP_VALUE_TABLE = DYNAMODB_CLIENT.table(
 			JUMP_VALUE_TABLE_NAME, TableSchema.documentSchemaBuilder()
-					.addIndexPartitionKey(TableMetadata.primaryIndexName(), PATIENT_ID_ATTR,
+					.addIndexPartitionKey(TableMetadata.primaryIndexName(), PATIENTID_ATTR_NAME,
 							AttributeValueType.N)
-					.addIndexSortKey(TableMetadata.primaryIndexName(), TIMESTAMP_ATTR, AttributeValueType.N)
+					.addIndexSortKey(TableMetadata.primaryIndexName(), TIMESTAMP_ATTR_NAME, AttributeValueType.N)
 					.attributeConverterProviders(AttributeConverterProvider.defaultProvider())
 					.build());
 
 	public void handleRequest(DynamodbEvent event, Context context) {
-		event.getRecords().forEach(r -> {
-			logger.finer("Reading record NewImage structure into map");
-			Map<String, AttributeValue> map = r.getDynamodb().getNewImage();
-			if (map == null) {
-				logger.severe("NewImage  in record messagee not found");
-			} else if (r.getEventName().equals("INSERT")) {
-				Long patientId = Long.parseLong(map.get(PATIENT_ID_ATTR).getN());
-				Integer currentValue = Integer.parseInt(map.get(PULSE_ATTR_NAME).getN());
-				LastValue prevItem = LAST_VALUE_TABLE.getItem(Key.builder().partitionValue(patientId).build());
-				if (prevItem == null) {
-					logger.finer("Patient doesn't have previous saved pulse value");
-				}
-				Integer lastValue = (prevItem == null ? currentValue : prevItem.getValue());
-				logger.finer(() -> String.format("Got data: patientId=%d, value: (current=%d, last=%d)",
-						patientId, currentValue, lastValue));
-				if (isJump(currentValue, lastValue)) {
-					jumpProcessing(patientId, currentValue, lastValue, map.get("timestamp").getN());
-				}
-				saveInDb(patientId, lastValue);
-			} else {
-				logger.severe(String.format("No record preocessing: EventName=%s, but it should be equal to \"INSERT\"",
-						r.getEventName()));
-			}
-
-		});
+		processInsertedItemsFromDDBEvent(event, this::processImage);
 	}
+
+	private void processImage( Map<String, AttributeValue> image ) {
+		Long patientId = Long.parseLong(image.get(PATIENTID_ATTR_NAME).getN());
+		Integer currentValue = Integer.parseInt(image.get(PULSE_VALUE_ATTR_NAME).getN());
+		LastValue prevItem = LAST_VALUE_TABLE.getItem(Key.builder().partitionValue(patientId).build());
+		if (prevItem == null) {
+			logger.finer("Patient doesn't have previous saved pulse value");
+		}
+		Integer lastValue = (prevItem == null ? currentValue : prevItem.getValue());
+		logger.finer(() -> String.format("Got data: patientId=%d, value: (current=%d, last=%d)",
+				patientId, currentValue, lastValue));
+		if (isJump(currentValue, lastValue)) {
+			jumpProcessing(patientId, currentValue, lastValue, image.get("timestamp").getN());
+		}
+		saveInDb(patientId, lastValue);
+    }
 
 	private static void saveInDb(Long patientId, Integer lastValue) {
 		App.lastValue.setPatientId(patientId);
@@ -80,8 +76,8 @@ public class App {
 		logger.finer(() -> String.format("Saving jump. patientId=%d, timestamp=%s, lastValue=%d, currentValue=%d",
 				patientId, timestamp, lastValue, currentValue));
 		EnhancedDocument newItem = EnhancedDocument.builder()
-				.putNumber(PATIENT_ID_ATTR, patientId)
-				.putNumber(TIMESTAMP_ATTR, Long.parseLong(timestamp))
+				.putNumber(PATIENTID_ATTR_NAME, patientId)
+				.putNumber(TIMESTAMP_ATTR_NAME, Long.parseLong(timestamp))
 				.putNumber(PREV_VALUE_ATTR_JUMP_VALUE_TABLE, lastValue)
 				.putNumber(CURR_VALUE_ATTR_JUMP_VALUE_TABLE, currentValue)
 				.build();
